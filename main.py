@@ -2,15 +2,14 @@ import uvicorn
 from fastapi import FastAPI
 
 from database import engine, Base
-from routers import users,authentication
+import routers
 
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-app.include_router(authentication.router)
-app.include_router(users.router)
+app.include_router(routers.app)
 
 
 if __name__ == "__main__":

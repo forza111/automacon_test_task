@@ -8,6 +8,9 @@ fastapi = "*"
 uvicorn = "*"
 sqlalchemy = "*"
 alembic = "*"
+jinja2 = "*"
+importlib-resources = "*"
+psycopg2 = "*"
 
 [dev-packages]
 
