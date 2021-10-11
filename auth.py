@@ -20,49 +20,24 @@ def authenticate_user(db: Session, email: str, password: str):
     return user
 
 
-# async def get_current_user(db: Session = Depends(database.get_db),token: str = Depends(dependencies.oauth2_scheme)):
-#     credentials_exception = HTTPException(
-#         status_code=status.HTTP_401_UNAUTHORIZED,
-#         detail="Could not validate credentials",
-#         headers={"WWW-Authenticate": "Bearer"},
-#     )
-#     try:
-#         payload = jwt.decode(token, dependencies.SECRET_KEY, algorithms=[dependencies.ALGORITHM])
-#         username: str = payload.get("sub")
-#         if username is None:
-#             raise credentials_exception
-#         token_data = username
-#     except JWTError:
-#         raise credentials_exception
-#     user = get_user_by_email(db,email=token_data)
-#     if user is None:
-#         raise credentials_exception
-#     return user
-
 templates = Jinja2Templates(directory="templates")
 
 async def get_current_user(request: Request,db: Session = Depends(database.get_db)):
-    try:
-        token = request.cookies.get("access_token")
-        if not token:
-            return templates.TemplateResponse(
-                "create_item.html", {"request": request, "errors": "Kindly Authenticate first by login"}
-            )
-        scheme, _, param = token.partition(" ")
-        payload = jwt.decode(param, dependencies.SECRET_KEY, algorithms=dependencies.ALGORITHM)
-        email = payload.get("sub")
-        if email is None:
-            return templates.TemplateResponse(
-                "login.html", {"request": request, "errors": "Kindly login first, you are not authenticated"}
-            )
-        else:
-            user = db.query(models.User).filter(models.User.email == email).first()
-            return user
-    except Exception as e:
-        print(e)
+    token = request.cookies.get("access_token")
+    if not token:
         return templates.TemplateResponse(
-            "detail.html", {"request": request, "errors": "Something is wrong !"}
+            "login.html", {"request": request, "error": "To view this page, you need to log in"}
         )
+    scheme, _, param = token.partition(" ")
+    payload = jwt.decode(param, dependencies.SECRET_KEY, algorithms=dependencies.ALGORITHM)
+    email = payload.get("sub")
+    if email is None:
+        return templates.TemplateResponse(
+            "login.html", {"request": request, "error": "To view this page, you need to log in"}
+        )
+    else:
+        user = db.query(models.User).filter(models.User.email == email).first()
+        return user
 
 
 

@@ -6,6 +6,14 @@
 				  {{msg}}
 			</div>
 		{% endif %}
+		{% if error %}
+			<div class="alert alert-success" role="alert">
+				  {{error}}
+			</div>
+		{% endif %}
+
+
+
 		<form method="POST">
   			<div class="mb-3">
     			<label for="email" class="form-label">Email address</label>

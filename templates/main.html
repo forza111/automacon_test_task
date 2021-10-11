@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
 <h1><a href="create_notebook"> + Создать новую заметку</a></h1>
+{% if msg %}
+    <div class="alert alert-success" role="alert">
+          {{msg}}
+    </div>
+{% endif %}
 {% for n in notebooks %}
     <br><a href="detail/{{n.id}}" >{{ n.heading }}</a>
 {% endfor %}

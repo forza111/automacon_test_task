@@ -31,46 +31,18 @@ async def main(request: Request,current_user: schemas.User = Depends(get_current
     return templates.TemplateResponse("main.html", {"request": request, 'notebooks': notebooks})
 
 
-
-
-
-
 @app.get("/detail/{notebook_id}", response_class=HTMLResponse)
-async def detail_notebook(request: Request, notebook_id:int,db: Session = Depends(get_db)):
-    try:
-        token = request.cookies.get("access_token")
-        if not token:
-            return templates.TemplateResponse(
-                "create_item.html", {"request": request, "errors": "Kindly Authenticate first by login"}
-            )
-        scheme, _, param = token.partition(" ")
-        payload = jwt.decode(param, dependencies.SECRET_KEY, algorithms=dependencies.ALGORITHM)
-        email = payload.get("sub")
-        if email is None:
-            return templates.TemplateResponse(
-                "create_item.html", {"request": request, "errors": "Kindly login first, you are not authenticated"}
-            )
-        else:
-            user = db.query(models.User).filter(models.User.email == email).first()
-            if user is None:
-                return templates.TemplateResponse(
-                    "create_item.html", {"request": request, "errors": "You are not authenticated, Kindly Login"}
-                )
-            else:
-                notebook = db.query(models.Notebook).filter(models.Notebook.id == notebook_id).first()
-                if notebook.user_id != user.id:
-                    return templates.TemplateResponse(
-                        "detail.html", {"request": request, "errors": "Not found"}
-                    )
-                else:
-                    return templates.TemplateResponse("detail.html", {"request": request, 'notebook': notebook})
-    except Exception as e:
-        pass
-
-
-
-
-
+async def detail_notebook(
+        request: Request,
+        notebook_id:int,
+        current_user: schemas.User = Depends(get_current_user),
+        db: Session = Depends(get_db)
+):
+    notebook = db.query(models.Notebook).filter(models.Notebook.id == notebook_id).first()
+    if notebook.user_id != current_user.id:
+        return templates.TemplateResponse("detail.html", {"request": request, "error": "Not found"})
+    else:
+        return templates.TemplateResponse("detail.html", {"request": request, 'notebook': notebook})
 
 
 
@@ -80,42 +52,20 @@ async def read_notebook(request: Request):
 
 
 @app.post("/create_notebook", response_class=HTMLResponse)
-async def create_notebook(request: Request,
-                          heading: str=Form(...),
-                          content: str=Form(...),
-                          db: Session = Depends(get_db)):
+async def create_notebook(
+        request: Request,
+        heading: str=Form(...),
+        content: str=Form(...),
+        current_user: schemas.User = Depends(get_current_user),
+        db: Session = Depends(get_db)
+):
+    notes = models.Notebook(user_id=current_user.id, heading=heading, content=content, date=datetime.now())
+    db.add(notes)
+    db.commit()
+    db.refresh(notes)
+    response = RedirectResponse(url="/")
+    return response
 
-    try:
-        token = request.cookies.get("access_token")
-        if not token:
-            return templates.TemplateResponse(
-                "create_item.html", {"request": request, "errors": "Kindly Authenticate first by login"}
-            )
-        scheme, _, param = token.partition(" ")
-        payload = jwt.decode(param, dependencies.SECRET_KEY, algorithms=dependencies.ALGORITHM)
-        email = payload.get("sub")
-        if email is None:
-            return templates.TemplateResponse(
-                "create_item.html", {"request": request, "errors": "Kindly login first, you are not authenticated"}
-            )
-        else:
-            user = db.query(models.User).filter(models.User.email == email).first()
-            if user is None:
-                return templates.TemplateResponse(
-                    "create_item.html", {"request": request, "errors": "You are not authenticated, Kindly Login"}
-                )
-            else:
-                notes = models.Notebook(user_id=user.id, heading=heading, content=content, date=datetime.now())
-                db.add(notes)
-                db.commit()
-                db.refresh(notes)
-                response = RedirectResponse(url="/")
-                return response
-    except Exception as e:
-        print(e)
-        return templates.TemplateResponse(
-            "create_item.html", {"request": request, "errors": "Something is wrong !"}
-        )
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -133,16 +83,16 @@ async def login(response: Response,request: Request,db: Session = Depends(get_db
         errors.append("Please Enter valid Email")
     if not password:
         errors.append("Password enter password")
-    # if len(errors) > 0:
-    #     return templates.TemplateResponse(
-    #         "login.html", {"request": request, "errors": errors}
-    #     )
+    if len(errors) > 0:
+        return templates.TemplateResponse(
+            "login.html", {"request": request, "error": errors}
+        )
     try:
         user = db.query(models.User).filter(models.User.email == email).first()
         if user is None:
             errors.append("Email does not exists")
             return templates.TemplateResponse(
-                "login.html", {"request": request, "errors": errors}
+                "login.html", {"request": request, "error": errors}
             )
         else:
             if verify_password(password, user.password):
@@ -150,11 +100,9 @@ async def login(response: Response,request: Request,db: Session = Depends(get_db
                 jwt_token = jwt.encode(
                     data, dependencies.SECRET_KEY, algorithm=dependencies.ALGORITHM
                 )
-                # if we redirect response in below way, it will not set the cookie
-                # return responses.RedirectResponse("/?msg=Login Successfull", status_code=status.HTTP_302_FOUND)
                 msg = "Login Successful"
                 response = templates.TemplateResponse(
-                    "login.html", {"request": request, "msg": msg}
+                    "main.html", {"request": request, "msg": msg}
                 )
                 response.set_cookie(
                     key="access_token", value=f"Bearer {jwt_token}", httponly=True
