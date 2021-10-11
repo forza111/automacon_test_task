@@ -1,11 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <form action="" method="POST">
-    <p>username <input type="text" name="username" /></p>
-    <p>password <input type="text" name="password" /></p>
-    <input type="submit" value="login">
-</form>
+		{% if msg %}
+			<div class="alert alert-success" role="alert">
+				  {{msg}}
+			</div>
+		{% endif %}
+		<form method="POST">
+  			<div class="mb-3">
+    			<label for="email" class="form-label">Email address</label>
+    			<input type="email" required class="form-control" name="email" aria-describedby="emailHelp">
+  			</div>
+  			<div class="mb-3">
+    			<label for="password" class="form-label">Password</label>
+    			<input type="password" required class="form-control" name="password">
+  			</div>
+			<button type="submit" class="btn btn-primary">Login</button>
+		</form>
 </head>
 <body>
 

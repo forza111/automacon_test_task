@@ -13,6 +13,8 @@ importlib-resources = "*"
 psycopg2 = "*"
 fastapi-login = "*"
 python-multipart = "*"
+python-jose = "*"
+bcrypt = "*"
 
 [dev-packages]
 
