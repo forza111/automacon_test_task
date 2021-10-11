@@ -11,6 +11,8 @@ alembic = "*"
 jinja2 = "*"
 importlib-resources = "*"
 psycopg2 = "*"
+fastapi-login = "*"
+python-multipart = "*"
 
 [dev-packages]
 
