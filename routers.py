@@ -10,9 +10,6 @@ import models
 from database import get_db
 import dependencies
 import schemas
-
-
-
 from auth import get_current_user, authenticate_user, create_access_token, verify_password
 
 
@@ -74,7 +71,7 @@ async def login(request: Request):
 
 
 @app.post("/login", response_class=HTMLResponse)
-async def login(response: Response,request: Request,db: Session = Depends(get_db)):
+async def login(request: Request,db: Session = Depends(get_db)):
     form = await request.form()
     email = form.get("email")
     password = form.get("password")
@@ -97,39 +94,15 @@ async def login(response: Response,request: Request,db: Session = Depends(get_db
         else:
             if verify_password(password, user.password):
                 data = {"sub": email}
-                jwt_token = jwt.encode(
-                    data, dependencies.SECRET_KEY, algorithm=dependencies.ALGORITHM
-                )
-                msg = "Login Successful"
-                response = templates.TemplateResponse(
-                    "main.html", {"request": request, "msg": msg}
-                )
-                response.set_cookie(
-                    key="access_token", value=f"Bearer {jwt_token}", httponly=True
-                )
+                response = create_access_token(data,request)
                 return response
             else:
                 errors.append("Invalid Password")
                 return templates.TemplateResponse(
-                    "login.html", {"request": request, "errors": errors}
+                    "login.html", {"request": request, "error": errors}
                 )
     except:
         errors.append("Something Wrong while authentication or storing tokens!")
         return templates.TemplateResponse(
-            "login.html", {"request": request, "errors": errors}
+            "login.html", {"request": request, "error": errors}
         )
-
-
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=dependencies.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
-

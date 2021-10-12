@@ -41,15 +41,12 @@ async def get_current_user(request: Request,db: Session = Depends(database.get_d
 
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, dependencies.SECRET_KEY, algorithm=dependencies.ALGORITHM)
-    return encoded_jwt
+def create_access_token(data: dict,request: Request):
+    jwt_token = jwt.encode(data, dependencies.SECRET_KEY, algorithm=dependencies.ALGORITHM)
+    msg = "Login Successful"
+    response = templates.TemplateResponse("main.html", {"request": request, "msg": msg})
+    response.set_cookie(key="access_token", value=f"Bearer {jwt_token}", httponly=True)
+    return response
 
 
 def get_user(db: Session, user_id: int):
