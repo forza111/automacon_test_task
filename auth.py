@@ -1,14 +1,14 @@
-from datetime import datetime, timedelta
-from typing import Optional
 
 from sqlalchemy.orm import Session
-from fastapi import Depends,Request
+from fastapi import Depends,Request, HTTPException, status
 from fastapi.templating import Jinja2Templates
 from jose import jwt
-import database
 
 import dependencies
 import models
+import database
+
+templates = Jinja2Templates(directory="templates")
 
 
 def authenticate_user(db: Session, email: str, password: str):
@@ -20,24 +20,15 @@ def authenticate_user(db: Session, email: str, password: str):
     return user
 
 
-templates = Jinja2Templates(directory="templates")
-
 async def get_current_user(request: Request,db: Session = Depends(database.get_db)):
     token = request.cookies.get("access_token")
-    if not token:
-        return templates.TemplateResponse(
-            "login.html", {"request": request, "error": "To view this page, you need to log in"}
-        )
+    if token is None:
+        return None
     scheme, _, param = token.partition(" ")
     payload = jwt.decode(param, dependencies.SECRET_KEY, algorithms=dependencies.ALGORITHM)
     email = payload.get("sub")
-    if email is None:
-        return templates.TemplateResponse(
-            "login.html", {"request": request, "error": "To view this page, you need to log in"}
-        )
-    else:
-        user = db.query(models.User).filter(models.User.email == email).first()
-        return user
+    user = db.query(models.User).filter(models.User.email == email).first()
+    return user
 
 
 

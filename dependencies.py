@@ -1,8 +1,8 @@
 from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 
 
-SECRET_KEY = "461554dcb6e1169277a0658acdb9b4634caf0c901fa63aaf5d3d9aa48f141056"   #get it with command openssl rand -hex 32
+SECRET_KEY = "461554dcb6e1169277a0658acdb9b4634caf0c901fa63aaf5d3d9aa48f141056"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1
 

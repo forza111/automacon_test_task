@@ -1,16 +1,14 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from fastapi import Request, APIRouter, Depends, Form, status, Response,HTTPException
+from fastapi import Request, APIRouter, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from jose import jwt
 
 import models
 from database import get_db
-import dependencies
 import schemas
-from auth import get_current_user, authenticate_user, create_access_token, verify_password
+from auth import get_current_user,create_access_token, verify_password
 
 
 app = APIRouter(
@@ -24,6 +22,8 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/", response_class=HTMLResponse)
 @app.post("/", response_class=HTMLResponse)
 async def main(request: Request,current_user: schemas.User = Depends(get_current_user),db: Session = Depends(get_db)):
+    if current_user is None:
+        return templates.TemplateResponse("login.html", {"request": request})
     notebooks = db.query(models.Notebook).order_by(models.Notebook.date.desc()).filter(models.Notebook.user_id==current_user.id)
     return templates.TemplateResponse("main.html", {"request": request, 'notebooks': notebooks})
 
@@ -35,6 +35,8 @@ async def detail_notebook(
         current_user: schemas.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
+    if current_user is None:
+        return templates.TemplateResponse("login.html", {"request": request})
     notebook = db.query(models.Notebook).filter(models.Notebook.id == notebook_id).first()
     if notebook.user_id != current_user.id:
         return templates.TemplateResponse("detail.html", {"request": request, "error": "Not found"})
@@ -56,6 +58,8 @@ async def create_notebook(
         current_user: schemas.User = Depends(get_current_user),
         db: Session = Depends(get_db)
 ):
+    if current_user is None:
+        return templates.TemplateResponse("login.html", {"request": request})
     notes = models.Notebook(user_id=current_user.id, heading=heading, content=content, date=datetime.now())
     db.add(notes)
     db.commit()
