@@ -1,4 +1,4 @@
-
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 from fastapi import Depends,Request, HTTPException, status
 from fastapi.templating import Jinja2Templates
@@ -11,33 +11,33 @@ import database
 templates = Jinja2Templates(directory="templates")
 
 
-def authenticate_user(db: Session, email: str, password: str):
-    user = get_user_by_email(db, email)
-    if not user:
-        return False
-    if not verify_password(password, user.password):
-        return False
-    return user
+class Authenticate:
+    @staticmethod
+    def authenticate_user(db: Session, email: str, password: str):
+        user = get_user_by_email(db, email)
+        if not user:
+            return False
+        if not verify_password(password, user.password):
+            return False
+        return user
 
+    @staticmethod
+    async def get_current_user(request: Request,db: Session = Depends(database.get_db)):
+        token = request.cookies.get("access_token")
+        if token is None:
+            return None
+        scheme, _, param = token.partition(" ")
+        payload = jwt.decode(param, dependencies.SECRET_KEY, algorithms=dependencies.ALGORITHM)
+        email = payload.get("sub")
+        user = db.query(models.User).filter(models.User.email == email).first()
+        return user
 
-async def get_current_user(request: Request,db: Session = Depends(database.get_db)):
-    token = request.cookies.get("access_token")
-    if token is None:
-        return None
-    scheme, _, param = token.partition(" ")
-    payload = jwt.decode(param, dependencies.SECRET_KEY, algorithms=dependencies.ALGORITHM)
-    email = payload.get("sub")
-    user = db.query(models.User).filter(models.User.email == email).first()
-    return user
-
-
-
-def create_access_token(data: dict,request: Request):
-    jwt_token = jwt.encode(data, dependencies.SECRET_KEY, algorithm=dependencies.ALGORITHM)
-    msg = "Login Successful"
-    response = templates.TemplateResponse("main.html", {"request": request, "msg": msg})
-    response.set_cookie(key="access_token", value=f"Bearer {jwt_token}", httponly=True)
-    return response
+    @staticmethod
+    def create_access_token(data: dict,request: Request):
+        jwt_token = jwt.encode(data, dependencies.SECRET_KEY, algorithm=dependencies.ALGORITHM)
+        response = RedirectResponse(url="/")
+        response.set_cookie(key="access_token", value=f"Bearer {jwt_token}", httponly=True)
+        return response
 
 
 def get_user(db: Session, user_id: int):

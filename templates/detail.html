@@ -1,8 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-{{ notebook.heading }}  {{notebook.date}}
-<br>{{ notebook.content }}
+{% if notebook %}
+    {{ notebook.heading }}  {{notebook.date}}
+    <br>{{ notebook.content }}
+{% endif %}
+
+{% if error %}
+    {{error}}
+{% endif %}
+
+
 
 </head>
 <body>
