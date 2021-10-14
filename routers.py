@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 import models
 from database import get_db
 import schemas
-from auth import Authenticate, verify_password
+from auth import Authenticate
 
 
 app = APIRouter(tags=["notes"])
@@ -36,9 +36,9 @@ async def detail_notebook(
         return templates.TemplateResponse("login.html", {"request": request})
     notebook = db.query(models.Notebook).filter(models.Notebook.id == notebook_id).first()
     if notebook is None:
-        raise HTTPException(status_code=404, detail="Item not found")
+        return templates.TemplateResponse("404.html", {"request": request})
     elif notebook.user_id != current_user.id:
-        return templates.TemplateResponse("detail.html", {"request": request, "error": "Not found"})
+        return templates.TemplateResponse("404.html", {"request": request})
     else:
         return templates.TemplateResponse("detail.html", {"request": request, 'notebook': notebook})
 
@@ -95,7 +95,7 @@ async def login(request: Request,db: Session = Depends(get_db)):
                 "login.html", {"request": request, "error": errors}
             )
         else:
-            if verify_password(password, user.password):
+            if Authenticate.verify_password(password, user.password):
                 data = {"sub": email}
                 response = Authenticate.create_access_token(data,request)
                 return response
