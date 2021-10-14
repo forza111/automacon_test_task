@@ -33,7 +33,8 @@ async def detail_notebook(
         db: Session = Depends(get_db)
 ):
     if current_user is None:
-        return templates.TemplateResponse("login.html", {"request": request})
+        response = RedirectResponse(url="/login")
+        return response
     notebook = db.query(models.Notebook).filter(models.Notebook.id == notebook_id).first()
     if notebook is None:
         return templates.TemplateResponse("404.html", {"request": request})
@@ -58,7 +59,8 @@ async def create_notebook(
         db: Session = Depends(get_db)
 ):
     if current_user is None:
-        return templates.TemplateResponse("login.html", {"request": request})
+        response = RedirectResponse(url="/login")
+        return response
     notes = models.Notebook(user_id=current_user.id, heading=heading, content=content, date=datetime.now())
     db.add(notes)
     db.commit()

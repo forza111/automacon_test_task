@@ -2,16 +2,14 @@
 <html lang="en">
 <head>
 {% if notebook %}
-    {{ notebook.heading }}  {{notebook.date}}
-    <br>{{ notebook.content }}
+    <em>{{notebook.date.strftime('%Y-%m-%d %H:%M:%S')}}</em>
+    <h4>{{ notebook.heading }}</h4>
+    <em>{{ notebook.content }}</em>
 {% endif %}
 
 {% if error %}
     {{error}}
 {% endif %}
-
-
-
 </head>
 <body>
 
